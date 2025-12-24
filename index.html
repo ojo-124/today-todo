@@ -11,12 +11,11 @@
   --pink-dark:#f3aebc;
   --bg:#fff6f8;
   --text:#444;
-  --gray:#aaa;
 }
 
 body{
   margin:0;
-  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
   background:var(--bg);
   color:var(--text);
 }
@@ -41,7 +40,7 @@ header{
   background:var(--pink);
   cursor:pointer;
   display:flex;
-  align-items:center; /* ← 中央揃え */
+  align-items:center;
 }
 
 .tab.active{
@@ -49,35 +48,16 @@ header{
   box-shadow:0 2px 6px rgba(0,0,0,0.15);
 }
 
-section{
-  display:none;
-  padding:15px;
-}
+section{ display:none; padding:15px; }
+section.active{ display:block; }
 
-section.active{
-  display:block;
-}
+h3{ font-size:14px; margin:16px 0 6px; }
 
-h3{
-  margin-top:20px;
-  margin-bottom:8px;
-  font-size:14px;
-}
-
-/* 入力系 */
-input, select, button{
+input,select,button{
   padding:8px;
   border-radius:8px;
   border:1px solid #ddd;
   font-size:14px;
-}
-
-select{
-  color:#555;
-}
-
-select.placeholder{
-  color:#aaa;
 }
 
 button{
@@ -90,29 +70,25 @@ button.small{
   padding:4px 6px;
   font-size:12px;
   margin-left:4px;
-  min-width:auto;
 }
 
-.list{
-  margin-top:10px;
-}
+.category-block{ margin-bottom:12px; }
 
-.item{
+.category-header{
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  margin-bottom:6px;
+  font-weight:bold;
 }
 
-.item-name{
-  flex:1;
-  font-size:14px;
+.task-row{
+  display:flex;
+  justify-content:space-between;
+  padding-left:10px;
+  margin-top:4px;
 }
 
-/* 今日のやること */
 .proposals button{
-  display:block;
-  width:100%;
+  width:140px;
   margin-bottom:6px;
   background:white;
   color:#444;
@@ -130,11 +106,10 @@ button.small{
   margin:12px 0;
 }
 
-.timer-controls{
+.timer-setting{
   display:flex;
-  gap:8px;
-  justify-content:center;
-  margin-top:8px;
+  gap:6px;
+  align-items:center;
 }
 </style>
 </head>
@@ -148,7 +123,6 @@ button.small{
   <div class="tab" onclick="switchTab('manage')">やりたいこと管理</div>
 </div>
 
-<!-- 今日のやること -->
 <section id="today" class="active">
   <h3>今日のやる気</h3>
   <select id="mood">
@@ -166,49 +140,69 @@ button.small{
   <div class="proposals" id="proposals"></div>
 
   <h3>タイマー設定</h3>
-  <div>
+  <div class="timer-setting">
     <input type="number" id="hours" min="0" value="0"> 時間
     <input type="number" id="minutes" min="0" value="25"> 分
   </div>
 
-  <!-- 文字盤をここに配置 -->
   <div class="timer-display" id="timer">00:00</div>
 
-  <div class="timer-controls">
-    <button onclick="startTimer()">開始</button>
-    <button onclick="togglePause()">一時停止</button>
-    <button onclick="stopTimer()">終了</button>
-  </div>
+  <button onclick="startTimer()">開始</button>
+  <button onclick="togglePause()">一時停止</button>
+  <button onclick="stopTimer()">終了</button>
 </section>
 
-<!-- 管理 -->
 <section id="manage">
   <h3>カテゴリ追加</h3>
   <input id="newCategory" placeholder="カテゴリ名">
   <button onclick="addCategory()">追加</button>
 
   <h3>やりたいこと追加</h3>
-  <select id="taskCategory" class="placeholder" onchange="removePlaceholder(this)">
-    <option selected disabled>カテゴリ</option>
-  </select>
+  <select id="taskCategory"></select>
   <input id="taskName" placeholder="やりたいこと">
-  <select id="taskType" class="placeholder" onchange="removePlaceholder(this)">
-    <option selected disabled>能動/受動</option>
+  <select id="taskType">
     <option>能動</option>
     <option>受動</option>
   </select>
   <button onclick="addTask()">追加</button>
 
   <h3>やりたいこと一覧</h3>
-  <div class="list" id="taskList"></div>
+  <div id="taskList"></div>
 </section>
 
 <script>
-let categories=[];
-let tasks=[];
+let categories=JSON.parse(localStorage.getItem("categories")||"[]");
+let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
+
 let timerInterval=null;
 let remaining=0;
 let paused=false;
+
+/* ===== 効果音（チーン） ===== */
+function playChime(){
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = 880; // チーンっぽい高音
+
+  gain.gain.setValueAtTime(0.001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start();
+  osc.stop(ctx.currentTime + 1.2);
+}
+/* ============================ */
+
+function save(){
+  localStorage.setItem("categories",JSON.stringify(categories));
+  localStorage.setItem("tasks",JSON.stringify(tasks));
+}
 
 function switchTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -217,83 +211,89 @@ function switchTab(id){
   document.getElementById(id).classList.add('active');
 }
 
-function removePlaceholder(select){
-  select.classList.remove('placeholder');
-}
-
 function addCategory(){
-  const name=newCategory.value.trim();
-  if(!name) return;
-  categories.push(name);
+  if(!newCategory.value.trim())return;
+  categories.push(newCategory.value.trim());
   newCategory.value="";
-  renderCategories();
-}
-
-function renderCategories(){
-  taskCategory.innerHTML='<option selected disabled>カテゴリ</option>';
-  taskCategory.classList.add('placeholder');
-  categories.forEach(c=>{
-    const o=document.createElement('option');
-    o.textContent=c;
-    taskCategory.appendChild(o);
-  });
+  save(); render();
 }
 
 function addTask(){
-  if(taskCategory.selectedIndex===0||taskType.selectedIndex===0) return;
-  tasks.push({
-    name:taskName.value,
-    category:taskCategory.value,
-    type:taskType.value
-  });
+  tasks.push({name:taskName.value,category:taskCategory.value});
   taskName.value="";
-  renderTasks();
+  save(); render();
 }
 
-function renderTasks(){
-  taskList.innerHTML="";
-  tasks.forEach((t,i)=>{
-    const d=document.createElement('div');
-    d.className='item';
-    d.innerHTML=`
-      <div class="item-name">${t.name}</div>
-      <div>
-        <button class="small" onclick="editTask(${i})">修正</button>
-        <button class="small" onclick="deleteTask(${i})">削除</button>
-      </div>`;
-    taskList.appendChild(d);
+function render(){
+  taskCategory.innerHTML="";
+  categories.forEach(c=>{
+    let o=document.createElement("option");
+    o.textContent=c;
+    taskCategory.appendChild(o);
   });
+
+  taskList.innerHTML="";
+  categories.forEach(c=>{
+    let block=document.createElement("div");
+    block.className="category-block";
+    block.innerHTML=`
+      <div class="category-header">
+        ${c}
+        <span>
+          <button class="small" onclick="editCategory('${c}')">修正</button>
+          <button class="small" onclick="deleteCategory('${c}')">削除</button>
+        </span>
+      </div>`;
+    tasks.filter(t=>t.category===c).forEach((t,i)=>{
+      let row=document.createElement("div");
+      row.className="task-row";
+      row.innerHTML=`
+        <span>${t.name}</span>
+        <span>
+          <button class="small" onclick="editTask(${i})">修正</button>
+          <button class="small" onclick="deleteTask(${i})">削除</button>
+        </span>`;
+      block.appendChild(row);
+    });
+    taskList.appendChild(block);
+  });
+}
+
+function editCategory(c){
+  const n=prompt("カテゴリ名変更",c);
+  if(!n)return;
+  categories=categories.map(x=>x===c?n:x);
+  tasks.forEach(t=>{if(t.category===c)t.category=n});
+  save(); render();
+}
+
+function deleteCategory(c){
+  categories=categories.filter(x=>x!==c);
+  tasks=tasks.filter(t=>t.category!==c);
+  save(); render();
 }
 
 function editTask(i){
   const n=prompt("名称変更",tasks[i].name);
-  if(n) tasks[i].name=n;
-  renderTasks();
+  if(n){tasks[i].name=n; save(); render();}
 }
 
 function deleteTask(i){
-  tasks.splice(i,1);
-  renderTasks();
-}
-
-function showRecommended(){
-  renderProposals([...tasks].slice(0,5));
-}
-
-function showRandom(){
-  const shuffled=[...tasks].sort(()=>0.5-Math.random());
-  renderProposals(shuffled.slice(0,5));
+  tasks.splice(i,1); save(); render();
 }
 
 function renderProposals(list){
   proposals.innerHTML="";
   list.forEach(t=>{
-    const b=document.createElement('button');
+    const b=document.createElement("button");
     b.textContent=t.name;
-    b.onclick=()=>b.classList.toggle('selected');
+    b.onclick=()=>b.classList.toggle("selected");
     proposals.appendChild(b);
   });
 }
+
+function showRecommended(){ renderProposals(tasks.slice(0,5)); }
+function showRandom(){ renderProposals([...tasks].sort(()=>0.5-Math.random()).slice(0,5)); }
 
 function startTimer(){
   stopTimer();
@@ -305,28 +305,22 @@ function startTimer(){
       updateTimer();
       if(remaining<=0){
         stopTimer();
+        playChime();   // ← ★ここで鳴る
         alert("終了！");
       }
     }
   },1000);
 }
 
-function togglePause(){
-  paused=!paused;
-}
-
-function stopTimer(){
-  clearInterval(timerInterval);
-  timerInterval=null;
-  paused=false;
-}
+function togglePause(){ paused=!paused; }
+function stopTimer(){ clearInterval(timerInterval); paused=false; }
 
 function updateTimer(){
-  const m=Math.floor(remaining/60);
-  const s=remaining%60;
-  timer.textContent=
-    String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
+  const m=Math.floor(remaining/60), s=remaining%60;
+  timer.textContent=String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
 }
+
+render();
 </script>
 
 </body>
