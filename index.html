@@ -6,155 +6,135 @@
 <title>今日のやること</title>
 
 <style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-               "Hiragino Sans", "Noto Sans JP", sans-serif;
-  margin: 0;
-  background: linear-gradient(180deg, #fff5f8, #ffe6ee);
-  color: #333;
+:root{
+  --pink:#f8cdd5;
+  --pink-dark:#f3aebc;
+  --bg:#fff6f8;
+  --text:#444;
+  --gray:#aaa;
 }
 
-header {
-  background: #ffcadb;
-  padding: 16px;
-  text-align: center;
-  font-weight: bold;
-  font-size: 16px;
-  border-bottom-left-radius: 18px;
-  border-bottom-right-radius: 18px;
+body{
+  margin:0;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 
-nav {
-  display: flex;
-  margin: 10px;
-  background: #ffd6e5;
-  border-radius: 14px;
-  overflow: hidden;
+header{
+  padding:12px;
+  text-align:center;
+  font-weight:bold;
+  font-size:18px;
 }
 
-nav button {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  color: #666;
+.tabs{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  padding:10px;
 }
 
-nav button.active {
-  background: #ffffff;
-  font-weight: bold;
-  color: #333;
+.tab{
+  padding:8px 16px;
+  border-radius:20px;
+  background:var(--pink);
+  cursor:pointer;
+  display:flex;
+  align-items:center; /* ← 中央揃え */
 }
 
-section {
-  padding: 14px;
+.tab.active{
+  background:white;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
 }
 
-.hidden {
-  display: none;
+section{
+  display:none;
+  padding:15px;
 }
 
-.label {
-  font-size: 13px;
-  margin-top: 14px;
-  margin-bottom: 6px;
-  color: #777;
+section.active{
+  display:block;
 }
 
-select, input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  border-radius: 12px;
-  border: 1px solid #f2b5c8;
-  color: #444;
+h3{
+  margin-top:20px;
+  margin-bottom:8px;
+  font-size:14px;
 }
 
-select option {
-  color: #444;
+/* 入力系 */
+input, select, button{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:14px;
 }
 
-button {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  border: none;
-  border-radius: 14px;
-  background: #ffb6cc;
-  color: #333;
+select{
+  color:#555;
 }
 
-button:active {
-  transform: scale(0.97);
+select.placeholder{
+  color:#aaa;
 }
 
-.task-btn {
-  background: #ffe3ec;
+button{
+  background:var(--pink-dark);
+  color:white;
+  border:none;
 }
 
-.task-btn.active {
-  background: #ff8fb3;
-  color: #fff;
+button.small{
+  padding:4px 6px;
+  font-size:12px;
+  margin-left:4px;
+  min-width:auto;
 }
 
-.list-small {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.6;
+.list{
+  margin-top:10px;
 }
 
-.category {
-  margin-top: 14px;
-  font-weight: bold;
-  color: #555;
+.item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:6px;
 }
 
-.item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  margin: 4px 0;
+.item-name{
+  flex:1;
+  font-size:14px;
 }
 
-.item span {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* 今日のやること */
+.proposals button{
+  display:block;
+  width:100%;
+  margin-bottom:6px;
+  background:white;
+  color:#444;
+  border:1px solid #f3aebc;
 }
 
-.edit-btn {
-  font-size: 11px;
-  padding: 4px 6px;
-  border-radius: 8px;
-  background: #ffd1e1;
-  white-space: nowrap;
+.proposals button.selected{
+  background:var(--pink-dark);
+  color:white;
 }
 
-.timer-setting {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.timer-display{
+  text-align:center;
+  font-size:42px;
+  margin:12px 0;
 }
 
-.timer-setting input {
-  width: 80px;
-}
-
-.timer-label {
-  font-size: 14px;
-  color: #555;
-}
-
-#timerDisplay {
-  font-size: 32px;
-  text-align: center;
-  margin-top: 10px;
-  font-weight: bold;
+.timer-controls{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-top:8px;
 }
 </style>
 </head>
@@ -163,214 +143,190 @@ button:active {
 
 <header>今日のやること</header>
 
-<nav>
-  <button id="tabToday" class="active">やること設定</button>
-  <button id="tabManage">やりたいこと管理</button>
-</nav>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('today')">やること設定</div>
+  <div class="tab" onclick="switchTab('manage')">やりたいこと管理</div>
+</div>
 
-<!-- やること設定 -->
-<section id="today">
-  <div class="label">今日のやる気</div>
-  <select id="energy">
-    <option>低</option>
-    <option>中</option>
-    <option>高</option>
+<!-- 今日のやること -->
+<section id="today" class="active">
+  <h3>今日のやる気</h3>
+  <select id="mood">
+    <option>低め</option>
+    <option>普通</option>
+    <option>高め</option>
   </select>
 
-  <button onclick="showRecommend()">おすすめを見る</button>
-  <button onclick="showRandom()">ランダム</button>
-
-  <div class="label">やること提案</div>
-  <div id="suggestions"></div>
-
-  <div class="label">一覧（おすすめ順）</div>
-  <div id="allList" class="list-small"></div>
-
-  <div class="label">タイマー</div>
-
-  <div class="timer-setting">
-    <input type="number" id="hour">
-    <span class="timer-label">時間</span>
-    <input type="number" id="min">
-    <span class="timer-label">分</span>
+  <div style="margin-top:10px;">
+    <button onclick="showRecommended()">おすすめを見る</button>
+    <button onclick="showRandom()">ランダム</button>
   </div>
 
-  <button onclick="startTimer()">開始</button>
-  <button onclick="togglePause()">一時停止 / 再開</button>
-  <button onclick="stopTimer()">終了</button>
+  <h3>やること提案</h3>
+  <div class="proposals" id="proposals"></div>
 
-  <div id="timerDisplay"></div>
+  <h3>タイマー設定</h3>
+  <div>
+    <input type="number" id="hours" min="0" value="0"> 時間
+    <input type="number" id="minutes" min="0" value="25"> 分
+  </div>
+
+  <!-- 文字盤をここに配置 -->
+  <div class="timer-display" id="timer">00:00</div>
+
+  <div class="timer-controls">
+    <button onclick="startTimer()">開始</button>
+    <button onclick="togglePause()">一時停止</button>
+    <button onclick="stopTimer()">終了</button>
+  </div>
 </section>
 
 <!-- 管理 -->
-<section id="manage" class="hidden">
-
-  <div class="label">カテゴリ追加</div>
+<section id="manage">
+  <h3>カテゴリ追加</h3>
   <input id="newCategory" placeholder="カテゴリ名">
   <button onclick="addCategory()">追加</button>
 
-  <div class="label">やりたいこと追加</div>
-  <select id="categorySelect">
-    <option style="color:#777">カテゴリ</option>
+  <h3>やりたいこと追加</h3>
+  <select id="taskCategory" class="placeholder" onchange="removePlaceholder(this)">
+    <option selected disabled>カテゴリ</option>
   </select>
   <input id="taskName" placeholder="やりたいこと">
-  <select id="activeType">
-    <option style="color:#777">能動/受動</option>
+  <select id="taskType" class="placeholder" onchange="removePlaceholder(this)">
+    <option selected disabled>能動/受動</option>
     <option>能動</option>
     <option>受動</option>
   </select>
   <button onclick="addTask()">追加</button>
 
-  <div class="label">登録済み一覧</div>
-  <div id="taskList"></div>
+  <h3>やりたいこと一覧</h3>
+  <div class="list" id="taskList"></div>
 </section>
 
 <script>
-let data = JSON.parse(localStorage.getItem("data") || "{}");
-let timer = null;
-let remaining = 0;
-let paused = false;
+let categories=[];
+let tasks=[];
+let timerInterval=null;
+let remaining=0;
+let paused=false;
 
-tabToday.onclick = () => switchTab(true);
-tabManage.onclick = () => switchTab(false);
-
-function switchTab(today) {
-  todaySection = document.getElementById("today");
-  manageSection = document.getElementById("manage");
-  todaySection.classList.toggle("hidden", !today);
-  manageSection.classList.toggle("hidden", today);
-  tabToday.classList.toggle("active", today);
-  tabManage.classList.toggle("active", !today);
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
 }
 
-function addCategory() {
-  const c = newCategory.value.trim();
-  if (!c) return;
-  data[c] = [];
-  save();
-  newCategory.value = "";
-  renderManage();
+function removePlaceholder(select){
+  select.classList.remove('placeholder');
 }
 
-function addTask() {
-  const c = categorySelect.value;
-  const n = taskName.value.trim();
-  const t = activeType.value;
-  if (!data[c] || !n || (t !== "能動" && t !== "受動")) return;
-  data[c].push({ name: n, type: t });
-  save();
-  taskName.value = "";
-  renderManage();
+function addCategory(){
+  const name=newCategory.value.trim();
+  if(!name) return;
+  categories.push(name);
+  newCategory.value="";
+  renderCategories();
 }
 
-function renderManage() {
-  categorySelect.innerHTML = `<option style="color:#777">カテゴリ</option>`;
-  taskList.innerHTML = "";
-  for (let c in data) {
-    categorySelect.innerHTML += `<option>${c}</option>`;
-    const div = document.createElement("div");
-    div.innerHTML = `<div class="category">${c}</div>`;
-    data[c].forEach((t, i) => {
-      div.innerHTML += `
-        <div class="item">
-          <span>${t.name} (${t.type})</span>
-          <button class="edit-btn" onclick="editTask('${c}',${i})">編集</button>
-          <button class="edit-btn" onclick="deleteTask('${c}',${i})">削除</button>
-        </div>`;
-    });
-    taskList.appendChild(div);
-  }
-}
-
-function editTask(c,i){
-  const n = prompt("名前変更", data[c][i].name);
-  if(n){ data[c][i].name = n; save(); renderManage(); }
-}
-function deleteTask(c,i){
-  data[c].splice(i,1); save(); renderManage();
-}
-
-function save() {
-  localStorage.setItem("data", JSON.stringify(data));
-}
-
-function collectTasks() {
-  return Object.values(data).flat();
-}
-
-function showRecommend() {
-  showTasks(collectTasks().slice(0,5));
-}
-function showRandom() {
-  const t = collectTasks().sort(()=>Math.random()-0.5);
-  showTasks(t.slice(0,5));
-}
-function showTasks(tasks){
-  suggestions.innerHTML = "";
-  tasks.forEach(t=>{
-    const b = document.createElement("button");
-    b.className = "task-btn";
-    b.textContent = t.name;
-    b.onclick = ()=>b.classList.toggle("active");
-    suggestions.appendChild(b);
+function renderCategories(){
+  taskCategory.innerHTML='<option selected disabled>カテゴリ</option>';
+  taskCategory.classList.add('placeholder');
+  categories.forEach(c=>{
+    const o=document.createElement('option');
+    o.textContent=c;
+    taskCategory.appendChild(o);
   });
-  allList.textContent = collectTasks().map(t=>t.name).join(" / ");
 }
 
-function startTimer() {
+function addTask(){
+  if(taskCategory.selectedIndex===0||taskType.selectedIndex===0) return;
+  tasks.push({
+    name:taskName.value,
+    category:taskCategory.value,
+    type:taskType.value
+  });
+  taskName.value="";
+  renderTasks();
+}
+
+function renderTasks(){
+  taskList.innerHTML="";
+  tasks.forEach((t,i)=>{
+    const d=document.createElement('div');
+    d.className='item';
+    d.innerHTML=`
+      <div class="item-name">${t.name}</div>
+      <div>
+        <button class="small" onclick="editTask(${i})">修正</button>
+        <button class="small" onclick="deleteTask(${i})">削除</button>
+      </div>`;
+    taskList.appendChild(d);
+  });
+}
+
+function editTask(i){
+  const n=prompt("名称変更",tasks[i].name);
+  if(n) tasks[i].name=n;
+  renderTasks();
+}
+
+function deleteTask(i){
+  tasks.splice(i,1);
+  renderTasks();
+}
+
+function showRecommended(){
+  renderProposals([...tasks].slice(0,5));
+}
+
+function showRandom(){
+  const shuffled=[...tasks].sort(()=>0.5-Math.random());
+  renderProposals(shuffled.slice(0,5));
+}
+
+function renderProposals(list){
+  proposals.innerHTML="";
+  list.forEach(t=>{
+    const b=document.createElement('button');
+    b.textContent=t.name;
+    b.onclick=()=>b.classList.toggle('selected');
+    proposals.appendChild(b);
+  });
+}
+
+function startTimer(){
   stopTimer();
-  const h = parseInt(hour.value || 0);
-  const m = parseInt(min.value || 0);
-  remaining = h * 3600 + m * 60;
-  paused = false;
-  runTimer();
-}
-
-function runTimer(){
-  timer = setInterval(()=>{
-    if(paused) return;
-    if(remaining <= 0){
-      stopTimer();
-      playSound();
-      return;
+  remaining=(+hours.value*60 + +minutes.value)*60;
+  updateTimer();
+  timerInterval=setInterval(()=>{
+    if(!paused){
+      remaining--;
+      updateTimer();
+      if(remaining<=0){
+        stopTimer();
+        alert("終了！");
+      }
     }
-    remaining--;
-    const hh = Math.floor(remaining/3600);
-    const mm = Math.floor((remaining%3600)/60);
-    const ss = remaining%60;
-    timerDisplay.textContent =
-      `${hh}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
   },1000);
 }
 
 function togglePause(){
-  paused = !paused;
+  paused=!paused;
 }
 
 function stopTimer(){
-  clearInterval(timer);
-  timer = null;
-  remaining = 0;
-  timerDisplay.textContent = "";
-  stopSound();
+  clearInterval(timerInterval);
+  timerInterval=null;
+  paused=false;
 }
 
-let audioCtx, oscillator;
-function playSound(){
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  oscillator = audioCtx.createOscillator();
-  oscillator.frequency.value = 880;
-  oscillator.connect(audioCtx.destination);
-  oscillator.start();
+function updateTimer(){
+  const m=Math.floor(remaining/60);
+  const s=remaining%60;
+  timer.textContent=
+    String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
 }
-function stopSound(){
-  if(oscillator){
-    oscillator.stop();
-    oscillator = null;
-  }
-}
-
-renderManage();
 </script>
 
 </body>
