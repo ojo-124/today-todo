@@ -11,6 +11,7 @@
   --pink-dark:#f3aebc;
   --bg:#fff6f8;
   --text:#444;
+  --gray:#888;
 }
 
 body{
@@ -60,6 +61,13 @@ input,select,button{
   font-size:14px;
 }
 
+select{
+  color:var(--gray);
+}
+select.selected{
+  color:var(--text);
+}
+
 button{
   background:var(--pink-dark);
   color:white;
@@ -100,6 +108,12 @@ button.small{
   color:white;
 }
 
+.all-list{
+  font-size:12px;
+  color:#666;
+  margin-top:6px;
+}
+
 .timer-display{
   text-align:center;
   font-size:42px;
@@ -110,6 +124,11 @@ button.small{
   display:flex;
   gap:6px;
   align-items:center;
+}
+
+.timer-setting input{
+  width:60px; /* ← 幅を半分程度に */
+  text-align:center;
 }
 </style>
 </head>
@@ -138,6 +157,7 @@ button.small{
 
   <h3>やること提案</h3>
   <div class="proposals" id="proposals"></div>
+  <div class="all-list" id="allList"></div>
 
   <h3>タイマー設定</h3>
   <div class="timer-setting">
@@ -158,9 +178,12 @@ button.small{
   <button onclick="addCategory()">追加</button>
 
   <h3>やりたいこと追加</h3>
-  <select id="taskCategory"></select>
+  <select id="taskCategory">
+    <option selected disabled>カテゴリ</option>
+  </select>
   <input id="taskName" placeholder="やりたいこと">
   <select id="taskType">
+    <option selected disabled>能動/受動</option>
     <option>能動</option>
     <option>受動</option>
   </select>
@@ -174,30 +197,21 @@ button.small{
 let categories=JSON.parse(localStorage.getItem("categories")||"[]");
 let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
 
-let timerInterval=null;
-let remaining=0;
-let paused=false;
+let timerInterval=null, remaining=0, paused=false;
 
-/* ===== 効果音（チーン） ===== */
+/* チーン音 */
 function playChime(){
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  osc.type = "sine";
-  osc.frequency.value = 880; // チーンっぽい高音
-
-  gain.gain.setValueAtTime(0.001, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-
-  osc.start();
-  osc.stop(ctx.currentTime + 1.2);
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const osc=ctx.createOscillator();
+  const gain=ctx.createGain();
+  osc.frequency.value=880;
+  osc.type="sine";
+  gain.gain.setValueAtTime(0.001,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.3,ctx.currentTime+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime+1);
 }
-/* ============================ */
 
 function save(){
   localStorage.setItem("categories",JSON.stringify(categories));
@@ -219,13 +233,14 @@ function addCategory(){
 }
 
 function addTask(){
+  if(taskCategory.selectedIndex===0||taskType.selectedIndex===0)return;
   tasks.push({name:taskName.value,category:taskCategory.value});
   taskName.value="";
   save(); render();
 }
 
 function render(){
-  taskCategory.innerHTML="";
+  taskCategory.innerHTML='<option selected disabled>カテゴリ</option>';
   categories.forEach(c=>{
     let o=document.createElement("option");
     o.textContent=c;
@@ -257,6 +272,8 @@ function render(){
     });
     taskList.appendChild(block);
   });
+
+  allList.textContent = tasks.map(t=>t.name).join(" / ");
 }
 
 function editCategory(c){
@@ -301,11 +318,10 @@ function startTimer(){
   updateTimer();
   timerInterval=setInterval(()=>{
     if(!paused){
-      remaining--;
-      updateTimer();
+      remaining--; updateTimer();
       if(remaining<=0){
         stopTimer();
-        playChime();   // ← ★ここで鳴る
+        playChime();
         alert("終了！");
       }
     }
