@@ -8,102 +8,117 @@
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-    "Hiragino Sans", "Noto Sans JP", sans-serif;
-  background: #f6f7fb;
+               "Hiragino Sans", "Noto Sans JP", sans-serif;
   margin: 0;
+  background: linear-gradient(180deg, #fff5f8, #ffe6ee);
   color: #333;
 }
 
 header {
-  background: #cfd9ff;
-  padding: 14px;
+  background: #ffcadb;
+  padding: 16px;
   text-align: center;
   font-weight: bold;
+  font-size: 16px;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
 }
 
 nav {
   display: flex;
+  margin: 10px;
+  background: #ffd6e5;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 nav button {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   border: none;
-  background: #e6ebff;
-}
-
-nav button.active {
-  background: #fff;
-  font-weight: bold;
-}
-
-main {
-  padding: 14px;
-  max-width: 480px;
-  margin: auto;
-}
-
-section {
-  background: #fff;
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 14px;
-}
-
-h2 {
-  font-size: 15px;
-  margin: 0 0 8px 0;
-}
-
-input, select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-select.placeholder {
-  color: #999;
-}
-
-button.main {
-  background: #d6e1ff;
-  border: none;
-  border-radius: 10px;
-  padding: 10px;
-  width: 100%;
-  margin-bottom: 6px;
-}
-
-.task-btn {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  margin-bottom: 6px;
-  background: #fff;
-}
-
-.task-btn.active {
-  background: #cfd9ff;
-}
-
-.small {
-  font-size: 12px;
+  background: transparent;
+  font-size: 14px;
   color: #666;
 }
 
-.hidden { display: none; }
-
-.timer {
-  font-size: 32px;
-  text-align: center;
-  margin: 10px 0;
+nav button.active {
+  background: #ffffff;
+  font-weight: bold;
+  color: #333;
 }
 
-.inline-btn {
+section {
+  padding: 14px;
+}
+
+.hidden {
+  display: none;
+}
+
+.label {
+  font-size: 13px;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: #777;
+}
+
+select, input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  border-radius: 12px;
+  border: 1px solid #f2b5c8;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  border: none;
+  border-radius: 14px;
+  background: #ffb6cc;
+  color: #333;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+.task-btn {
+  background: #ffe3ec;
+}
+
+.task-btn.active {
+  background: #ff8fb3;
+  color: #fff;
+}
+
+.list-small {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.category {
+  margin-top: 14px;
+  font-weight: bold;
+  color: #555;
+}
+
+.item {
+  padding-left: 12px;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.edit-btn {
   font-size: 12px;
   margin-left: 6px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: #ffd1e1;
 }
 </style>
 </head>
@@ -113,237 +128,211 @@ button.main {
 <header>今日のやること</header>
 
 <nav>
-  <button id="tabToday" class="active">今日のやること</button>
-  <button id="tabManage">やること管理</button>
+  <button id="tabToday" class="active">やること設定</button>
+  <button id="tabManage">やりたいこと管理</button>
 </nav>
 
-<main>
+<!-- やること設定 -->
+<section id="today">
+  <div class="label">今日のやる気</div>
+  <select id="energy">
+    <option>低</option>
+    <option>中</option>
+    <option>高</option>
+  </select>
 
-<!-- 今日のやること -->
-<div id="todayTab">
-<section>
-<h2>今日のやる気</h2>
-<select id="mood">
-  <option value="低">低</option>
-  <option value="中">中</option>
-  <option value="高">高</option>
-</select>
+  <button onclick="showRecommend()">おすすめを見る</button>
+  <button onclick="showRandom()">ランダム</button>
 
-<button class="main" id="recommendBtn">おすすめ</button>
-<button class="main" id="randomBtn">ランダム</button>
+  <div id="suggestions"></div>
+
+  <div class="label">一覧（おすすめ順）</div>
+  <div id="allList" class="list-small"></div>
+
+  <div class="label">タイマー</div>
+  <input type="number" id="hour" placeholder="時間">
+  <input type="number" id="min" placeholder="分">
+
+  <button onclick="startTimer()">開始</button>
+  <button onclick="togglePause()">一時停止 / 再開</button>
+  <button onclick="stopTimer()">終了</button>
+
+  <div id="timerDisplay"></div>
 </section>
-
-<section>
-<h2>やること提案（最大5件）</h2>
-<div id="suggestions"></div>
-
-<div class="small">おすすめ順一覧</div>
-<div id="allList"></div>
-</section>
-
-<section>
-<h2>タイマー</h2>
-
-<select id="hour"></select>
-<select id="minute"></select>
-
-<div class="timer" id="timer">00:00</div>
-
-<button class="main" id="startTimer">開始</button>
-<button class="main" id="pauseTimer">一時停止</button>
-<button class="main" id="stopTimer">終了</button>
-</section>
-</div>
 
 <!-- 管理 -->
-<div id="manageTab" class="hidden">
+<section id="manage" class="hidden">
 
-<section>
-<h2>カテゴリ追加</h2>
-<input id="newCategory" placeholder="カテゴリ名">
-<button class="main" id="addCategory">追加</button>
+  <div class="label">カテゴリ追加</div>
+  <input id="newCategory" placeholder="カテゴリ名">
+  <button onclick="addCategory()">追加</button>
+
+  <div class="label">やりたいこと追加</div>
+  <select id="categorySelect">
+    <option style="color:#999">カテゴリ</option>
+  </select>
+  <input id="taskName" placeholder="やりたいこと">
+  <select id="activeType">
+    <option style="color:#999">能動/受動</option>
+    <option>能動</option>
+    <option>受動</option>
+  </select>
+  <button onclick="addTask()">追加</button>
+
+  <div class="label">登録済み一覧</div>
+  <div id="taskList"></div>
 </section>
-
-<section>
-<h2>やりたいこと追加</h2>
-<select id="taskCategory" class="placeholder">
-  <option value="">カテゴリ</option>
-</select>
-<input id="taskName" placeholder="やりたいこと">
-<select id="taskType" class="placeholder">
-  <option value="">能動/受動</option>
-  <option value="能動">能動</option>
-  <option value="受動">受動</option>
-</select>
-<button class="main" id="addTask">追加</button>
-</section>
-
-<section>
-<h2>登録済み一覧</h2>
-<div id="listArea"></div>
-</section>
-
-</div>
-</main>
-
-<audio id="alarm">
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
-</audio>
 
 <script>
-let data = JSON.parse(localStorage.getItem("todayApp")||"{}");
-if(!data.categories) data.categories={};
+let data = JSON.parse(localStorage.getItem("data") || "{}");
+let timer = null;
+let remaining = 0;
+let paused = false;
 
-const save=()=>localStorage.setItem("todayApp",JSON.stringify(data));
+/* タブ */
+tabToday.onclick = () => switchTab(true);
+tabManage.onclick = () => switchTab(false);
 
-const tabToday=document.getElementById("tabToday");
-const tabManage=document.getElementById("tabManage");
-const todayTab=document.getElementById("todayTab");
-const manageTab=document.getElementById("manageTab");
-
-tabToday.onclick=()=>switchTab(true);
-tabManage.onclick=()=>switchTab(false);
-
-function switchTab(t){
-  todayTab.classList.toggle("hidden",!t);
-  manageTab.classList.toggle("hidden",t);
-  tabToday.classList.toggle("active",t);
-  tabManage.classList.toggle("active",!t);
+function switchTab(today) {
+  document.getElementById("today").classList.toggle("hidden", !today);
+  document.getElementById("manage").classList.toggle("hidden", today);
+  tabToday.classList.toggle("active", today);
+  tabManage.classList.toggle("active", !today);
 }
 
 /* 管理 */
-addCategory.onclick=()=>{
-  const n=newCategory.value.trim();
-  if(!n||data.categories[n])return;
-  data.categories[n]=[];
-  newCategory.value="";
-  save();render();
-};
-
-addTask.onclick=()=>{
-  const c=taskCategory.value;
-  const n=taskName.value.trim();
-  const t=taskType.value;
-  if(!c||!n||!t)return;
-  data.categories[c].push({name:n,type:t});
-  taskName.value="";
-  taskCategory.value="";
-  taskType.value="";
-  save();render();
-};
-
-function render(){
-  taskCategory.innerHTML='<option value="">カテゴリ</option>';
-  listArea.innerHTML="";
-  let all=[];
-  for(const c in data.categories){
-    taskCategory.innerHTML+=`<option>${c}</option>`;
-
-    const cd=document.createElement("div");
-    cd.innerHTML=`<b>${c}</b>
-      <button class="inline-btn" onclick="editCategory('${c}')">編集</button>
-      <button class="inline-btn" onclick="deleteCategory('${c}')">削除</button>`;
-    listArea.appendChild(cd);
-
-    data.categories[c].forEach((t,i)=>{
-      all.push(t);
-      const td=document.createElement("div");
-      td.innerHTML=`・${t.name}（${t.type}）
-        <button class="inline-btn" onclick="editTask('${c}',${i})">編集</button>
-        <button class="inline-btn" onclick="deleteTask('${c}',${i})">削除</button>`;
-      listArea.appendChild(td);
-    });
-  }
-  renderToday(all);
+function addCategory() {
+  const c = newCategory.value.trim();
+  if (!c) return;
+  data[c] = [];
+  save();
+  newCategory.value = "";
+  renderManage();
 }
 
-window.editCategory=(c)=>{
-  const n=prompt("カテゴリ名変更",c);
-  if(!n)return;
-  data.categories[n]=data.categories[c];
-  delete data.categories[c];
-  save();render();
-};
+function addTask() {
+  const c = categorySelect.value;
+  const n = taskName.value.trim();
+  const t = activeType.value;
+  if (!data[c] || !n || (t !== "能動" && t !== "受動")) return;
+  data[c].push({ name: n, type: t });
+  save();
+  taskName.value = "";
+  renderManage();
+}
 
-window.deleteCategory=(c)=>{
-  if(!confirm("カテゴリを削除しますか？"))return;
-  delete data.categories[c];
-  save();render();
-};
+function renderManage() {
+  categorySelect.innerHTML = `<option style="color:#999">カテゴリ</option>`;
+  taskList.innerHTML = "";
+  for (let c in data) {
+    categorySelect.innerHTML += `<option>${c}</option>`;
+    const div = document.createElement("div");
+    div.innerHTML = `<div class="category">${c}</div>`;
+    data[c].forEach((t, i) => {
+      div.innerHTML += `
+        <div class="item">
+          ${t.name} (${t.type})
+          <button class="edit-btn" onclick="editTask('${c}',${i})">編集</button>
+          <button class="edit-btn" onclick="deleteTask('${c}',${i})">削除</button>
+        </div>`;
+    });
+    taskList.appendChild(div);
+  }
+}
 
-window.editTask=(c,i)=>{
-  const t=data.categories[c][i];
-  const n=prompt("名称変更",t.name);
-  if(!n)return;
-  t.name=n;
-  save();render();
-};
+function editTask(c,i){
+  const n = prompt("名前変更", data[c][i].name);
+  if(n){ data[c][i].name = n; save(); renderManage(); }
+}
+function deleteTask(c,i){
+  data[c].splice(i,1); save(); renderManage();
+}
 
-window.deleteTask=(c,i)=>{
-  if(!confirm("削除しますか？"))return;
-  data.categories[c].splice(i,1);
-  save();render();
-};
+function save() {
+  localStorage.setItem("data", JSON.stringify(data));
+}
 
 /* 今日 */
-function renderToday(all){
-  allList.innerHTML="";
-  all.forEach(t=>{
-    allList.innerHTML+=`<div class="small">・${t.name}（${t.type}）</div>`;
-  });
+function collectTasks() {
+  return Object.values(data).flat();
 }
 
-recommendBtn.onclick=()=>pick(false);
-randomBtn.onclick=()=>pick(true);
-
-function pick(rand){
-  suggestions.innerHTML="";
-  let list=[];
-  for(const c in data.categories){
-    list=list.concat(data.categories[c]);
-  }
-  if(rand) list.sort(()=>Math.random()-0.5);
-  list.slice(0,5).forEach(t=>{
-    const b=document.createElement("button");
-    b.className="task-btn";
-    b.textContent=t.name;
-    b.onclick=()=>b.classList.toggle("active");
+function showRecommend() {
+  showTasks(collectTasks().slice(0,5));
+}
+function showRandom() {
+  const t = collectTasks().sort(()=>Math.random()-0.5);
+  showTasks(t.slice(0,5));
+}
+function showTasks(tasks){
+  suggestions.innerHTML = "";
+  tasks.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "task-btn";
+    b.textContent = t.name;
+    b.onclick = ()=>b.classList.toggle("active");
     suggestions.appendChild(b);
   });
+  allList.textContent = collectTasks().map(t=>t.name).join(" / ");
 }
 
 /* タイマー */
-for(let i=0;i<24;i++)hour.innerHTML+=`<option>${i}</option>`;
-for(let i=0;i<60;i++)minute.innerHTML+=`<option>${i}</option>`;
+function startTimer() {
+  stopTimer();
+  const h = parseInt(hour.value || 0);
+  const m = parseInt(min.value || 0);
+  remaining = h * 3600 + m * 60;
+  paused = false;
+  runTimer();
+}
 
-let sec=0,id;
-startTimer.onclick=()=>{
-  sec=hour.value*3600+minute.value*60;
-  clearInterval(id);
-  alarm.pause(); alarm.currentTime=0;
-  id=setInterval(()=>{
-    if(sec<=0){
-      clearInterval(id);
-      alarm.play();
+function runTimer(){
+  timer = setInterval(()=>{
+    if(paused) return;
+    if(remaining <= 0){
+      stopTimer();
+      playSound();
       return;
     }
-    sec--;
-    timer.textContent=
-      String(Math.floor(sec/60)).padStart(2,"0")+":"+
-      String(sec%60).padStart(2,"0");
+    remaining--;
+    const hh = Math.floor(remaining/3600);
+    const mm = Math.floor((remaining%3600)/60);
+    const ss = remaining%60;
+    timerDisplay.textContent =
+      `${hh}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
   },1000);
-};
+}
 
-pauseTimer.onclick=()=>clearInterval(id);
+function togglePause(){
+  paused = !paused;
+}
 
-stopTimer.onclick=()=>{
-  clearInterval(id);
-  alarm.pause();
-  alarm.currentTime=0;
-  timer.textContent="00:00";
-};
+function stopTimer(){
+  clearInterval(timer);
+  timer = null;
+  remaining = 0;
+  timerDisplay.textContent = "";
+  stopSound();
+}
 
-render();
+/* 音（iPhone対応） */
+let audioCtx, oscillator;
+function playSound(){
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  oscillator = audioCtx.createOscillator();
+  oscillator.frequency.value = 880;
+  oscillator.connect(audioCtx.destination);
+  oscillator.start();
+}
+function stopSound(){
+  if(oscillator){
+    oscillator.stop();
+    oscillator = null;
+  }
+}
+
+renderManage();
 </script>
+
 </body>
 </html>
