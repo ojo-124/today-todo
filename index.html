@@ -151,7 +151,7 @@ button.small{
   </select>
 
   <div style="margin-top:10px;">
-    <button onclick="showRecommended()">おすすめを見る</button>
+    <button onclick="showRecommended()">おすすめ</button> <!-- ★変更 -->
     <button onclick="showRandom()">ランダム</button>
     <button onclick="showTypeRandom('能動')">能動ランダム</button>
     <button onclick="showTypeRandom('受動')">受動ランダム</button>
@@ -309,28 +309,29 @@ function scoreTask(t){
   let score=0;
   const m=mood.value;
 
-  // 受動/能動
   if(m==="低め" && t.type==="受動") score+=2;
   if(m==="高め" && t.type==="能動") score+=2;
   if(m==="普通") score+=1;
 
-  // ボリューム
   if(m==="低め" && t.volume==="かるい") score+=1;
   if(m==="普通" && t.volume==="普通") score+=1;
   if(m==="高め" && t.volume==="がっつり") score+=1;
 
-  // 心の負荷
   if(m==="低め" && t.mental==="気楽") score+=1;
   if(m==="普通" && t.mental==="普通") score+=1;
   if(m==="高め" && t.mental==="疲れる") score+=1;
 
-  // 全部普通救済
   if(t.volume==="普通" && t.mental==="普通") score+=1;
 
-  // ランダム補正
   score+=Math.floor(Math.random()*2);
 
   return score;
+}
+
+// ★重複なしで5個取得
+function pickUnique(arr, n){
+  const shuffled=[...arr].sort(()=>0.5-Math.random());
+  return shuffled.slice(0,n);
 }
 
 function showRecommended(){
@@ -339,19 +340,15 @@ function showRecommended(){
     const s=scoreTask(t);
     for(let i=0;i<s;i++) pool.push(t);
   });
-  renderProposals(pool.sort(()=>0.5-Math.random()).slice(0,5));
+  renderProposals(pickUnique(pool,5));
 }
 
 function showRandom(){
-  renderProposals([...tasks].sort(()=>0.5-Math.random()).slice(0,5));
+  renderProposals(pickUnique(tasks,5));
 }
 
 function showTypeRandom(type){
-  renderProposals(
-    tasks.filter(t=>t.type===type)
-         .sort(()=>0.5-Math.random())
-         .slice(0,5)
-  );
+  renderProposals(pickUnique(tasks.filter(t=>t.type===type),5));
 }
 
 function renderProposals(list){
