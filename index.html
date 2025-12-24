@@ -153,6 +153,8 @@ button.small{
   <div style="margin-top:10px;">
     <button onclick="showRecommended()">おすすめを見る</button>
     <button onclick="showRandom()">ランダム</button>
+    <button onclick="showTypeRandom('能動')">能動ランダム</button>
+    <button onclick="showTypeRandom('受動')">受動ランダム</button>
   </div>
 
   <h3>やること提案</h3>
@@ -181,12 +183,29 @@ button.small{
   <select id="taskCategory">
     <option selected disabled>カテゴリ</option>
   </select>
+
   <input id="taskName" placeholder="やりたいこと">
+
   <select id="taskType">
-    <option selected disabled>能動/受動</option>
-    <option>能動</option>
+    <option selected disabled>受動/能動</option>
     <option>受動</option>
+    <option>能動</option>
   </select>
+
+  <select id="taskVolume">
+    <option selected disabled>ボリューム</option>
+    <option>かるい</option>
+    <option>普通</option>
+    <option>がっつり</option>
+  </select>
+
+  <select id="taskMental">
+    <option selected disabled>心の負荷</option>
+    <option>気楽</option>
+    <option>普通</option>
+    <option>疲れる</option>
+  </select>
+
   <button onclick="addTask()">追加</button>
 
   <h3>やりたいこと一覧</h3>
@@ -199,7 +218,6 @@ let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
 
 let timerInterval=null, remaining=0, paused=false;
 
-/* チーン音 */
 function playChime(){
   const ctx=new (window.AudioContext||window.webkitAudioContext)();
   const osc=ctx.createOscillator();
@@ -233,8 +251,19 @@ function addCategory(){
 }
 
 function addTask(){
-  if(taskCategory.selectedIndex===0||taskType.selectedIndex===0)return;
-  tasks.push({name:taskName.value,category:taskCategory.value});
+  if(taskCategory.selectedIndex===0 ||
+     taskType.selectedIndex===0 ||
+     taskVolume.selectedIndex===0 ||
+     taskMental.selectedIndex===0) return;
+
+  tasks.push({
+    name:taskName.value,
+    category:taskCategory.value,
+    type:taskType.value,
+    volume:taskVolume.value,
+    mental:taskMental.value
+  });
+
   taskName.value="";
   save(); render();
 }
@@ -263,7 +292,7 @@ function render(){
       let row=document.createElement("div");
       row.className="task-row";
       row.innerHTML=`
-        <span>${t.name}</span>
+        <span>${t.name} (${t.type}/${t.volume}/${t.mental})</span>
         <span>
           <button class="small" onclick="editTask(${i})">修正</button>
           <button class="small" onclick="deleteTask(${i})">削除</button>
@@ -276,27 +305,53 @@ function render(){
   allList.textContent = tasks.map(t=>t.name).join(" / ");
 }
 
-function editCategory(c){
-  const n=prompt("カテゴリ名変更",c);
-  if(!n)return;
-  categories=categories.map(x=>x===c?n:x);
-  tasks.forEach(t=>{if(t.category===c)t.category=n});
-  save(); render();
+function scoreTask(t){
+  let score=0;
+  const m=mood.value;
+
+  // 受動/能動
+  if(m==="低め" && t.type==="受動") score+=2;
+  if(m==="高め" && t.type==="能動") score+=2;
+  if(m==="普通") score+=1;
+
+  // ボリューム
+  if(m==="低め" && t.volume==="かるい") score+=1;
+  if(m==="普通" && t.volume==="普通") score+=1;
+  if(m==="高め" && t.volume==="がっつり") score+=1;
+
+  // 心の負荷
+  if(m==="低め" && t.mental==="気楽") score+=1;
+  if(m==="普通" && t.mental==="普通") score+=1;
+  if(m==="高め" && t.mental==="疲れる") score+=1;
+
+  // 全部普通救済
+  if(t.volume==="普通" && t.mental==="普通") score+=1;
+
+  // ランダム補正
+  score+=Math.floor(Math.random()*2);
+
+  return score;
 }
 
-function deleteCategory(c){
-  categories=categories.filter(x=>x!==c);
-  tasks=tasks.filter(t=>t.category!==c);
-  save(); render();
+function showRecommended(){
+  const pool=[];
+  tasks.forEach(t=>{
+    const s=scoreTask(t);
+    for(let i=0;i<s;i++) pool.push(t);
+  });
+  renderProposals(pool.sort(()=>0.5-Math.random()).slice(0,5));
 }
 
-function editTask(i){
-  const n=prompt("名称変更",tasks[i].name);
-  if(n){tasks[i].name=n; save(); render();}
+function showRandom(){
+  renderProposals([...tasks].sort(()=>0.5-Math.random()).slice(0,5));
 }
 
-function deleteTask(i){
-  tasks.splice(i,1); save(); render();
+function showTypeRandom(type){
+  renderProposals(
+    tasks.filter(t=>t.type===type)
+         .sort(()=>0.5-Math.random())
+         .slice(0,5)
+  );
 }
 
 function renderProposals(list){
@@ -308,9 +363,6 @@ function renderProposals(list){
     proposals.appendChild(b);
   });
 }
-
-function showRecommended(){ renderProposals(tasks.slice(0,5)); }
-function showRandom(){ renderProposals([...tasks].sort(()=>0.5-Math.random()).slice(0,5)); }
 
 function startTimer(){
   stopTimer();
