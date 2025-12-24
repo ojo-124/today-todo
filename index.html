@@ -69,6 +69,11 @@ select, input {
   font-size: 14px;
   border-radius: 12px;
   border: 1px solid #f2b5c8;
+  color: #444;
+}
+
+select option {
+  color: #444;
 }
 
 button {
@@ -108,17 +113,48 @@ button:active {
 }
 
 .item {
-  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   margin: 4px 0;
 }
 
+.item span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .edit-btn {
-  font-size: 12px;
-  margin-left: 6px;
-  padding: 4px 8px;
-  border-radius: 10px;
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: 8px;
   background: #ffd1e1;
+  white-space: nowrap;
+}
+
+.timer-setting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-setting input {
+  width: 80px;
+}
+
+.timer-label {
+  font-size: 14px;
+  color: #555;
+}
+
+#timerDisplay {
+  font-size: 32px;
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -144,14 +180,20 @@ button:active {
   <button onclick="showRecommend()">おすすめを見る</button>
   <button onclick="showRandom()">ランダム</button>
 
+  <div class="label">やること提案</div>
   <div id="suggestions"></div>
 
   <div class="label">一覧（おすすめ順）</div>
   <div id="allList" class="list-small"></div>
 
   <div class="label">タイマー</div>
-  <input type="number" id="hour" placeholder="時間">
-  <input type="number" id="min" placeholder="分">
+
+  <div class="timer-setting">
+    <input type="number" id="hour">
+    <span class="timer-label">時間</span>
+    <input type="number" id="min">
+    <span class="timer-label">分</span>
+  </div>
 
   <button onclick="startTimer()">開始</button>
   <button onclick="togglePause()">一時停止 / 再開</button>
@@ -169,11 +211,11 @@ button:active {
 
   <div class="label">やりたいこと追加</div>
   <select id="categorySelect">
-    <option style="color:#999">カテゴリ</option>
+    <option style="color:#777">カテゴリ</option>
   </select>
   <input id="taskName" placeholder="やりたいこと">
   <select id="activeType">
-    <option style="color:#999">能動/受動</option>
+    <option style="color:#777">能動/受動</option>
     <option>能動</option>
     <option>受動</option>
   </select>
@@ -189,18 +231,18 @@ let timer = null;
 let remaining = 0;
 let paused = false;
 
-/* タブ */
 tabToday.onclick = () => switchTab(true);
 tabManage.onclick = () => switchTab(false);
 
 function switchTab(today) {
-  document.getElementById("today").classList.toggle("hidden", !today);
-  document.getElementById("manage").classList.toggle("hidden", today);
+  todaySection = document.getElementById("today");
+  manageSection = document.getElementById("manage");
+  todaySection.classList.toggle("hidden", !today);
+  manageSection.classList.toggle("hidden", today);
   tabToday.classList.toggle("active", today);
   tabManage.classList.toggle("active", !today);
 }
 
-/* 管理 */
 function addCategory() {
   const c = newCategory.value.trim();
   if (!c) return;
@@ -222,7 +264,7 @@ function addTask() {
 }
 
 function renderManage() {
-  categorySelect.innerHTML = `<option style="color:#999">カテゴリ</option>`;
+  categorySelect.innerHTML = `<option style="color:#777">カテゴリ</option>`;
   taskList.innerHTML = "";
   for (let c in data) {
     categorySelect.innerHTML += `<option>${c}</option>`;
@@ -231,7 +273,7 @@ function renderManage() {
     data[c].forEach((t, i) => {
       div.innerHTML += `
         <div class="item">
-          ${t.name} (${t.type})
+          <span>${t.name} (${t.type})</span>
           <button class="edit-btn" onclick="editTask('${c}',${i})">編集</button>
           <button class="edit-btn" onclick="deleteTask('${c}',${i})">削除</button>
         </div>`;
@@ -252,7 +294,6 @@ function save() {
   localStorage.setItem("data", JSON.stringify(data));
 }
 
-/* 今日 */
 function collectTasks() {
   return Object.values(data).flat();
 }
@@ -276,7 +317,6 @@ function showTasks(tasks){
   allList.textContent = collectTasks().map(t=>t.name).join(" / ");
 }
 
-/* タイマー */
 function startTimer() {
   stopTimer();
   const h = parseInt(hour.value || 0);
@@ -315,7 +355,6 @@ function stopTimer(){
   stopSound();
 }
 
-/* 音（iPhone対応） */
 let audioCtx, oscillator;
 function playSound(){
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
