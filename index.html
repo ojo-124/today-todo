@@ -138,8 +138,8 @@ button.small{
 <header>今日のやること</header>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('today')">やること設定</div>
-  <div class="tab" onclick="switchTab('manage')">やりたいこと管理</div>
+  <div class="tab active" onclick="switchTab('today', this)">やること設定</div>
+  <div class="tab" onclick="switchTab('manage', this)">やりたいこと管理</div>
 </div>
 
 <section id="today" class="active">
@@ -151,7 +151,7 @@ button.small{
   </select>
 
   <div style="margin-top:10px;">
-    <button onclick="showRecommended()">おすすめ</button> <!-- ★変更 -->
+    <button onclick="showRecommended()">おすすめ</button>
     <button onclick="showRandom()">ランダム</button>
     <button onclick="showTypeRandom('能動')">能動ランダム</button>
     <button onclick="showTypeRandom('受動')">受動ランダム</button>
@@ -236,12 +236,15 @@ function save(){
   localStorage.setItem("tasks",JSON.stringify(tasks));
 }
 
-function switchTab(id){
+/* ★ 修正済み */
+function switchTab(id, el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   document.getElementById(id).classList.add('active');
 }
+
+/* 以下 JS は変更なし */
 
 function addCategory(){
   if(!newCategory.value.trim())return;
@@ -324,23 +327,18 @@ function scoreTask(t){
   if(t.volume==="普通" && t.mental==="普通") score+=1;
 
   score+=Math.floor(Math.random()*2);
-
   return score;
 }
 
-// ★重複なしで5個取得
-function pickUnique(arr, n){
-  const shuffled=[...arr].sort(()=>0.5-Math.random());
-  return shuffled.slice(0,n);
+function pickUnique(arr,n){
+  return [...new Set(arr)].sort(()=>0.5-Math.random()).slice(0,n);
 }
 
 function showRecommended(){
-  const pool=[];
-  tasks.forEach(t=>{
-    const s=scoreTask(t);
-    for(let i=0;i<s;i++) pool.push(t);
-  });
-  renderProposals(pickUnique(pool,5));
+  const scored=tasks.map(t=>({t,score:scoreTask(t)}))
+    .sort((a,b)=>b.score-a.score)
+    .map(x=>x.t);
+  renderProposals(scored.slice(0,5));
 }
 
 function showRandom(){
