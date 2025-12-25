@@ -42,6 +42,7 @@ header{
   cursor:pointer;
   display:flex;
   align-items:center;
+  justify-content:center;
 }
 
 .tab.active{
@@ -127,7 +128,7 @@ button.small{
 }
 
 .timer-setting input{
-  width:60px;
+  width:50px;
   text-align:center;
 }
 </style>
@@ -138,23 +139,23 @@ button.small{
 <header>今日のやること</header>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('today')">やること設定</div>
-  <div class="tab" onclick="switchTab('manage')">やりたいこと管理</div>
+  <div class="tab active" onclick="switchTab('today',this)">やること設定</div>
+  <div class="tab" onclick="switchTab('manage',this)">やりたいこと管理</div>
 </div>
 
 <section id="today" class="active">
   <h3>今日のやる気</h3>
   <select id="mood">
     <option>低め</option>
-    <option>普通</option>
+    <option selected>普通</option>
     <option>高め</option>
   </select>
 
-  <div style="margin-top:10px;">
-    <button onclick="showRecommended()">おすすめ</button> <!-- ★変更 -->
+  <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+    <button onclick="showRecommended()">おすすめ</button>
     <button onclick="showRandom()">ランダム</button>
-    <button onclick="showTypeRandom('能動')">能動ランダム</button>
-    <button onclick="showTypeRandom('受動')">受動ランダム</button>
+    <button onclick="showActiveRandom()">能動ランダム</button>
+    <button onclick="showPassiveRandom()">受動ランダム</button>
   </div>
 
   <h3>やること提案</h3>
@@ -170,7 +171,7 @@ button.small{
   <div class="timer-display" id="timer">00:00</div>
 
   <button onclick="startTimer()">開始</button>
-  <button onclick="togglePause()">一時停止</button>
+  <button onclick="togglePause()">一時停止/再開</button>
   <button onclick="stopTimer()">終了</button>
 </section>
 
@@ -183,29 +184,24 @@ button.small{
   <select id="taskCategory">
     <option selected disabled>カテゴリ</option>
   </select>
-
   <input id="taskName" placeholder="やりたいこと">
-
   <select id="taskType">
     <option selected disabled>受動/能動</option>
     <option>受動</option>
     <option>能動</option>
   </select>
-
   <select id="taskVolume">
     <option selected disabled>ボリューム</option>
     <option>かるい</option>
     <option>普通</option>
     <option>がっつり</option>
   </select>
-
-  <select id="taskMental">
+  <select id="taskLoad">
     <option selected disabled>心の負荷</option>
     <option>気楽</option>
     <option>普通</option>
     <option>疲れる</option>
   </select>
-
   <button onclick="addTask()">追加</button>
 
   <h3>やりたいこと一覧</h3>
@@ -218,12 +214,12 @@ let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
 
 let timerInterval=null, remaining=0, paused=false;
 
+/* チーン音 */
 function playChime(){
   const ctx=new (window.AudioContext||window.webkitAudioContext)();
   const osc=ctx.createOscillator();
   const gain=ctx.createGain();
   osc.frequency.value=880;
-  osc.type="sine";
   gain.gain.setValueAtTime(0.001,ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.3,ctx.currentTime+0.02);
   gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);
@@ -236,10 +232,10 @@ function save(){
   localStorage.setItem("tasks",JSON.stringify(tasks));
 }
 
-function switchTab(id){
+function switchTab(id,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   document.getElementById(id).classList.add('active');
 }
 
@@ -251,19 +247,16 @@ function addCategory(){
 }
 
 function addTask(){
-  if(taskCategory.selectedIndex===0 ||
-     taskType.selectedIndex===0 ||
-     taskVolume.selectedIndex===0 ||
-     taskMental.selectedIndex===0) return;
+  if(taskCategory.selectedIndex===0||taskType.selectedIndex===0||
+     taskVolume.selectedIndex===0||taskLoad.selectedIndex===0)return;
 
   tasks.push({
     name:taskName.value,
     category:taskCategory.value,
     type:taskType.value,
     volume:taskVolume.value,
-    mental:taskMental.value
+    load:taskLoad.value
   });
-
   taskName.value="";
   save(); render();
 }
@@ -292,7 +285,7 @@ function render(){
       let row=document.createElement("div");
       row.className="task-row";
       row.innerHTML=`
-        <span>${t.name} (${t.type}/${t.volume}/${t.mental})</span>
+        <span>${t.name}（${t.type}/${t.volume}/${t.load}）</span>
         <span>
           <button class="small" onclick="editTask(${i})">修正</button>
           <button class="small" onclick="deleteTask(${i})">削除</button>
@@ -305,50 +298,27 @@ function render(){
   allList.textContent = tasks.map(t=>t.name).join(" / ");
 }
 
-function scoreTask(t){
-  let score=0;
-  const m=mood.value;
-
-  if(m==="低め" && t.type==="受動") score+=2;
-  if(m==="高め" && t.type==="能動") score+=2;
-  if(m==="普通") score+=1;
-
-  if(m==="低め" && t.volume==="かるい") score+=1;
-  if(m==="普通" && t.volume==="普通") score+=1;
-  if(m==="高め" && t.volume==="がっつり") score+=1;
-
-  if(m==="低め" && t.mental==="気楽") score+=1;
-  if(m==="普通" && t.mental==="普通") score+=1;
-  if(m==="高め" && t.mental==="疲れる") score+=1;
-
-  if(t.volume==="普通" && t.mental==="普通") score+=1;
-
-  score+=Math.floor(Math.random()*2);
-
-  return score;
+function editCategory(c){
+  const n=prompt("カテゴリ名変更",c);
+  if(!n)return;
+  categories=categories.map(x=>x===c?n:x);
+  tasks.forEach(t=>{if(t.category===c)t.category=n});
+  save(); render();
 }
 
-// ★重複なしで5個取得
-function pickUnique(arr, n){
-  const shuffled=[...arr].sort(()=>0.5-Math.random());
-  return shuffled.slice(0,n);
+function deleteCategory(c){
+  categories=categories.filter(x=>x!==c);
+  tasks=tasks.filter(t=>t.category!==c);
+  save(); render();
 }
 
-function showRecommended(){
-  const pool=[];
-  tasks.forEach(t=>{
-    const s=scoreTask(t);
-    for(let i=0;i<s;i++) pool.push(t);
-  });
-  renderProposals(pickUnique(pool,5));
+function editTask(i){
+  const n=prompt("名称変更",tasks[i].name);
+  if(n){tasks[i].name=n; save(); render();}
 }
 
-function showRandom(){
-  renderProposals(pickUnique(tasks,5));
-}
-
-function showTypeRandom(type){
-  renderProposals(pickUnique(tasks.filter(t=>t.type===type),5));
+function deleteTask(i){
+  tasks.splice(i,1); save(); render();
 }
 
 function renderProposals(list){
@@ -361,13 +331,62 @@ function renderProposals(list){
   });
 }
 
+function scoreTask(t,mood,baseRand){
+  let score=100;
+
+  if(mood==="低め"){
+    if(t.type==="能動") score-=30;
+    if(t.volume==="がっつり") score-=20;
+    if(t.load==="疲れる") score-=20;
+  }
+  if(mood==="普通"){
+    if(t.volume==="普通") score+=10;
+  }
+  if(mood==="高め"){
+    if(t.type==="能動") score+=20;
+    if(t.volume==="がっつり") score+=10;
+    if(t.load==="疲れる") score+=10;
+  }
+
+  score+=Math.random()*baseRand-baseRand/2;
+  return score;
+}
+
+function showRecommended(){
+  const mood=mood.value;
+  const scored=[...tasks].map(t=>({...t,score:scoreTask(t,mood,10)}));
+  scored.sort((a,b)=>b.score-a.score);
+  renderProposals(scored.slice(0,5));
+}
+
+function showRandom(){
+  renderProposals([...tasks].sort(()=>0.5-Math.random()).slice(0,5));
+}
+
+function showActiveRandom(){
+  const mood=mood.value;
+  const list=tasks.filter(t=>t.type==="能動")
+    .map(t=>({...t,score:scoreTask(t,mood,20)}))
+    .sort((a,b)=>b.score-a.score);
+  renderProposals(list.slice(0,5));
+}
+
+function showPassiveRandom(){
+  const mood=mood.value;
+  const list=tasks.filter(t=>t.type==="受動")
+    .map(t=>({...t,score:scoreTask(t,mood,20)}))
+    .sort((a,b)=>b.score-a.score);
+  renderProposals(list.slice(0,5));
+}
+
 function startTimer(){
   stopTimer();
   remaining=(+hours.value*60 + +minutes.value)*60;
   updateTimer();
   timerInterval=setInterval(()=>{
     if(!paused){
-      remaining--; updateTimer();
+      remaining--;
+      updateTimer();
       if(remaining<=0){
         stopTimer();
         playChime();
@@ -379,7 +398,6 @@ function startTimer(){
 
 function togglePause(){ paused=!paused; }
 function stopTimer(){ clearInterval(timerInterval); paused=false; }
-
 function updateTimer(){
   const m=Math.floor(remaining/60), s=remaining%60;
   timer.textContent=String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
