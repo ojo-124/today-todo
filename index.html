@@ -40,6 +40,8 @@ header{
   border-radius:20px;
   background:var(--pink);
   cursor:pointer;
+  display:flex;
+  align-items:center;
 }
 
 .tab.active{
@@ -58,6 +60,8 @@ input,select,button{
   border:1px solid #ddd;
   font-size:14px;
 }
+
+select{ color:var(--gray); }
 
 button{
   background:var(--pink-dark);
@@ -102,13 +106,24 @@ button.small{
 .all-list{
   font-size:12px;
   color:#666;
-  margin-top:6px;
+  margin-top:8px;
 }
 
 .timer-display{
   text-align:center;
   font-size:42px;
   margin:12px 0;
+}
+
+.timer-setting{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+
+.timer-setting input{
+  width:60px;
+  text-align:center;
 }
 </style>
 </head>
@@ -140,6 +155,18 @@ button.small{
   <h3>やること提案</h3>
   <div class="proposals" id="proposals"></div>
   <div class="all-list" id="allList"></div>
+
+  <h3>タイマー設定</h3>
+  <div class="timer-setting">
+    <input type="number" id="hours" min="0" value="0"> 時間
+    <input type="number" id="minutes" min="0" value="0"> 分
+  </div>
+
+  <div class="timer-display" id="timer">00:00</div>
+
+  <button onclick="startTimer()">開始</button>
+  <button onclick="togglePause()">一時停止</button>
+  <button onclick="stopTimer()">終了</button>
 </section>
 
 <section id="manage">
@@ -148,21 +175,27 @@ button.small{
   <button onclick="addCategory()">追加</button>
 
   <h3>やりたいこと追加</h3>
-  <select id="taskCategory"></select>
+  <select id="taskCategory">
+    <option selected disabled>カテゴリ</option>
+  </select>
+
   <input id="taskName" placeholder="やりたいこと">
 
   <select id="taskType">
+    <option selected disabled>受動/能動</option>
     <option>受動</option>
     <option>能動</option>
   </select>
 
   <select id="taskVolume">
+    <option selected disabled>ボリューム</option>
     <option>かるい</option>
     <option>普通</option>
     <option>がっつり</option>
   </select>
 
   <select id="taskMental">
+    <option selected disabled>心の負荷</option>
     <option>気楽</option>
     <option>普通</option>
     <option>疲れる</option>
@@ -175,15 +208,17 @@ button.small{
 </section>
 
 <script>
-let categories=JSON.parse(localStorage.getItem("categories")||"[]");
-let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
+let categories = JSON.parse(localStorage.getItem("categories")||"[]");
+let tasks = JSON.parse(localStorage.getItem("tasks")||"[]");
+
+let timerInterval=null, remaining=0, paused=false;
 
 function save(){
   localStorage.setItem("categories",JSON.stringify(categories));
   localStorage.setItem("tasks",JSON.stringify(tasks));
 }
 
-function switchTab(id,el){
+function switchTab(id, el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
@@ -198,6 +233,11 @@ function addCategory(){
 }
 
 function addTask(){
+  if(taskCategory.selectedIndex===0 ||
+     taskType.selectedIndex===0 ||
+     taskVolume.selectedIndex===0 ||
+     taskMental.selectedIndex===0) return;
+
   tasks.push({
     name:taskName.value,
     category:taskCategory.value,
@@ -209,38 +249,8 @@ function addTask(){
   save(); render();
 }
 
-/* ★ 編集・削除（ここが今回の修正点） */
-
-function editCategory(name){
-  const n=prompt("カテゴリ名を変更",name);
-  if(!n)return;
-  categories=categories.map(c=>c===name?n:c);
-  tasks.forEach(t=>{if(t.category===name)t.category=n});
-  save(); render();
-}
-
-function deleteCategory(name){
-  if(!confirm("削除しますか？"))return;
-  categories=categories.filter(c=>c!==name);
-  tasks=tasks.filter(t=>t.category!==name);
-  save(); render();
-}
-
-function editTask(i){
-  const n=prompt("名称変更",tasks[i].name);
-  if(!n)return;
-  tasks[i].name=n;
-  save(); render();
-}
-
-function deleteTask(i){
-  if(!confirm("削除しますか？"))return;
-  tasks.splice(i,1);
-  save(); render();
-}
-
 function render(){
-  taskCategory.innerHTML="";
+  taskCategory.innerHTML='<option selected disabled>カテゴリ</option>';
   categories.forEach(c=>{
     let o=document.createElement("option");
     o.textContent=c;
@@ -249,61 +259,132 @@ function render(){
 
   taskList.innerHTML="";
   categories.forEach(c=>{
-    let b=document.createElement("div");
-    b.innerHTML=`<b>${c}</b>
-      <button class="small" onclick="editCategory('${c}')">修正</button>
-      <button class="small" onclick="deleteCategory('${c}')">削除</button>`;
+    let block=document.createElement("div");
+    block.className="category-block";
+    block.innerHTML=`
+      <div class="category-header">
+        ${c}
+        <span>
+          <button class="small" onclick="editCategory('${c}')">修正</button>
+          <button class="small" onclick="deleteCategory('${c}')">削除</button>
+        </span>
+      </div>`;
     tasks.filter(t=>t.category===c).forEach((t,i)=>{
-      b.innerHTML+=`
-        <div class="task-row">
-          ${t.name} (${t.type}/${t.volume}/${t.mental})
-          <span>
-            <button class="small" onclick="editTask(${i})">修正</button>
-            <button class="small" onclick="deleteTask(${i})">削除</button>
-          </span>
-        </div>`;
+      let row=document.createElement("div");
+      row.className="task-row";
+      row.innerHTML=`
+        <span>${t.name} (${t.type}/${t.volume}/${t.mental})</span>
+        <span>
+          <button class="small" onclick="editTask(${i})">修正</button>
+          <button class="small" onclick="deleteTask(${i})">削除</button>
+        </span>`;
+      block.appendChild(row);
     });
-    taskList.appendChild(b);
+    taskList.appendChild(block);
   });
+}
 
-  allList.textContent=tasks.map(t=>t.name).join(" / ");
+function editCategory(c){
+  const n=prompt("カテゴリ名変更",c);
+  if(!n)return;
+  categories=categories.map(x=>x===c?n:x);
+  tasks.forEach(t=>{ if(t.category===c)t.category=n; });
+  save(); render();
+}
+
+function deleteCategory(c){
+  categories=categories.filter(x=>x!==c);
+  tasks=tasks.filter(t=>t.category!==c);
+  save(); render();
+}
+
+function editTask(i){
+  const n=prompt("名称変更",tasks[i].name);
+  if(n){ tasks[i].name=n; save(); render(); }
+}
+
+function deleteTask(i){
+  tasks.splice(i,1); save(); render();
 }
 
 function scoreTask(t){
-  let s=0;
+  let score=0;
   const m=mood.value;
-  if(m==="低め"&&t.type==="受動")s+=2;
-  if(m==="高め"&&t.type==="能動")s+=2;
-  if(m==="低め"&&t.volume==="かるい")s++;
-  if(m==="低め"&&t.mental==="気楽")s++;
-  s+=Math.random();
-  return s;
+
+  if(m==="低め" && t.type==="受動") score+=3;
+  if(m==="高め" && t.type==="能動") score+=3;
+  if(m==="普通") score+=1;
+
+  if(m==="低め" && t.volume==="かるい") score+=2;
+  if(m==="普通" && t.volume==="普通") score+=2;
+  if(m==="高め" && t.volume==="がっつり") score+=2;
+
+  if(m==="低め" && t.mental==="気楽") score+=2;
+  if(m==="普通" && t.mental==="普通") score+=2;
+  if(m==="高め" && t.mental==="疲れる") score+=2;
+
+  score+=Math.random(); // 軽い揺らぎ
+  return score;
+}
+
+function applyResult(list){
+  proposals.innerHTML="";
+  allList.innerHTML="";
+
+  list.slice(0,5).forEach(t=>{
+    const b=document.createElement("button");
+    b.textContent=t.name;
+    b.onclick=()=>b.classList.toggle("selected");
+    proposals.appendChild(b);
+  });
+
+  list.slice(5).forEach(t=>{
+    const d=document.createElement("div");
+    d.textContent="・"+t.name;
+    allList.appendChild(d);
+  });
 }
 
 function showRecommended(){
-  renderProposals([...tasks]
-    .map(t=>({t,s:scoreTask(t)}))
-    .sort((a,b)=>b.s-a.s)
-    .map(x=>x.t)
-    .slice(0,5));
+  const sorted=[...tasks]
+    .map(t=>({t,score:scoreTask(t)}))
+    .sort((a,b)=>b.score-a.score)
+    .map(x=>x.t);
+  applyResult(sorted);
 }
 
 function showRandom(){
-  renderProposals([...tasks].sort(()=>0.5-Math.random()).slice(0,5));
+  const shuffled=[...tasks].sort(()=>0.5-Math.random());
+  applyResult(shuffled);
 }
 
 function showTypeRandom(type){
-  renderProposals(tasks.filter(t=>t.type===type)
-    .sort(()=>0.5-Math.random()).slice(0,5));
+  const filtered=tasks.filter(t=>t.type===type)
+    .sort(()=>0.5-Math.random());
+  applyResult(filtered);
 }
 
-function renderProposals(list){
-  proposals.innerHTML="";
-  list.forEach(t=>{
-    const b=document.createElement("button");
-    b.textContent=t.name;
-    proposals.appendChild(b);
-  });
+function startTimer(){
+  stopTimer();
+  remaining=(+hours.value*60 + +minutes.value)*60;
+  updateTimer();
+  timerInterval=setInterval(()=>{
+    if(!paused){
+      remaining--;
+      updateTimer();
+      if(remaining<=0){
+        stopTimer();
+        alert("終了！");
+      }
+    }
+  },1000);
+}
+
+function togglePause(){ paused=!paused; }
+function stopTimer(){ clearInterval(timerInterval); paused=false; }
+function updateTimer(){
+  const m=Math.floor(remaining/60), s=remaining%60;
+  timer.textContent=String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
 }
 
 render();
